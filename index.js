@@ -25,7 +25,7 @@ app.post('/auth/register', async (req, res) => {
   const { data, error } = await supabase.auth.signUp({ email, password });
 
   if (error) return res.status(400).json({ error: error.message });
-  res.status(201).json({ message: 'تم التسجيل، تحقق من الإيميل', user: data.user });
+  res.status(201).json({ message: 'Registered successfully', user: data.user });
 });
 
 app.post('/auth/login', async (req, res) => {
@@ -33,7 +33,7 @@ app.post('/auth/login', async (req, res) => {
 
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (error) return res.status(401).json({ error: 'إيميل أو باسورد غلط' });
+  if (error) return res.status(401).json({ error: 'Invalid email or password' });
 
   res.json({
     token: data.session.access_token,
@@ -43,7 +43,7 @@ app.post('/auth/login', async (req, res) => {
 
 app.post('/auth/logout', async (req, res) => {
   await supabase.auth.signOut();
-  res.json({ message: 'تم تسجيل الخروج' });
+  res.json({ message: 'Logged out successfully' });
 });
 
 // ───────────────────────────────
@@ -53,7 +53,7 @@ const requireAuth = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
-    return res.status(401).json({ error: 'محتاج تسجيل دخول' });
+    return res.status(401).json({ error: 'Authentication required' });
   }
 
   const token = authHeader.replace('Bearer ', '');
@@ -61,7 +61,7 @@ const requireAuth = async (req, res, next) => {
   const { data: { user }, error } = await supabase.auth.getUser(token);
 
   if (error || !user) {
-    return res.status(401).json({ error: 'الـ token غلط أو انتهى' });
+    return res.status(401).json({ error: 'Invalid or expired token' });
   }
 
   req.user = user;
@@ -72,7 +72,7 @@ const requireAdmin = async (req, res, next) => {
   await requireAuth(req, res, async () => {
     // يمكنك تعديل الإيميل هنا ليكون إيميل الآدمن الخاص بك
     if (req.user.email !== 'admin@yourstore.com') {
-      return res.status(403).json({ error: 'مش مسموح لك بإجراء العمليات الإدارية' });
+      return res.status(403).json({ error: 'Admin access required' });
     }
     next();
   });
