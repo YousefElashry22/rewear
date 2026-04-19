@@ -109,7 +109,7 @@ app.get('/products/:id', async (req, res) => {
     .eq('id', req.params.id)
     .single();
 
-  if (error) return res.status(404).json({ error: 'المنتج مش موجود' });
+  if (error) return res.status(404).json({ error: 'Product not found' });
   res.json(data);
 });
 
@@ -117,7 +117,7 @@ app.post('/products', requireAdmin, async (req, res) => {
   const { name, price, category, image_url, stock } = req.body;
 
   if (!name || !price) {
-    return res.status(400).json({ error: 'الاسم والسعر مطلوبين' });
+    return res.status(400).json({ error: 'Name and price are required' });
   }
 
   const { data, error } = await supabase
@@ -137,7 +137,7 @@ app.put('/products/:id', requireAdmin, async (req, res) => {
     .select();
 
   if (error) return res.status(500).json({ error: error.message });
-  if (!data.length) return res.status(404).json({ error: 'المنتج مش موجود' });
+  if (!data.length) return res.status(404).json({ error: 'Product not found' });
   res.json(data[0]);
 });
 
@@ -148,7 +148,7 @@ app.delete('/products/:id', requireAdmin, async (req, res) => {
     .eq('id', req.params.id);
 
   if (error) return res.status(500).json({ error: error.message });
-  res.json({ message: 'تم حذف المنتج' });
+  res.json({ message: 'Product deleted' });
 });
 
 // ───────────────────────────────
@@ -282,7 +282,7 @@ app.patch('/orders/:id/status', requireAdmin, async (req, res) => {
 
   const allowed = ['pending', 'shipped', 'delivered', 'cancelled'];
   if (!allowed.includes(status)) {
-    return res.status(400).json({ error: `الحالة لازم تكون: ${allowed.join(', ')}` });
+    return res.status(400).json({ error: `Status must be: ${allowed.join(', ')}` });
   }
 
   const { data, error } = await supabase
