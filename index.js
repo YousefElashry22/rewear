@@ -6,7 +6,10 @@ const app = express();
 app.use(express.json());
 const cors = require('cors');
 app.use(cors({
-  origin: 'https://courageous-pudding-3d68b2.netlify.app'
+  origin: 'https://courageous-pudding-3d68b2.netlify.app',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
