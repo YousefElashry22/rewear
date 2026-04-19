@@ -11,7 +11,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
-app.options('*', cors());
+app.options('*', cors({
+  origin: 'https://courageous-pudding-3d68b2.netlify.app',
+  credentials: true
+}));
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
