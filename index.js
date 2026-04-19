@@ -1,20 +1,20 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
-app.use(express.json());
-const cors = require('cors');
-app.use(cors({
+
+const corsOptions = {
   origin: 'https://courageous-pudding-3d68b2.netlify.app',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
-}));
-app.options(/.*/, cors({
-  origin: 'https://courageous-pudding-3d68b2.netlify.app',
-  credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions)); // ← لازم يكون هنا قبل أي routes
+app.use(express.json());
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
