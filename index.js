@@ -294,4 +294,57 @@ app.patch('/orders/:id/status', requireAdmin, async (req, res) => {
   res.json(data[0]);
 });
 
+const axios = require('axios');
+
+// Paymob Payment Route
+app.post('/payment/create', requireAuth, async (req, res) => {
+  const { amount } = req.body;
+  const user = req.user;
+
+  try {
+    // Step 1: Auth Token
+    const authRes = await axios.post('https://accept.paymob.com/api/auth/tokens', {
+      api_key: process.env.PAYMOB_API_KEY
+    });
+    const token = authRes.data.token;
+
+    // Step 2: Order
+    const orderRes = await axios.post('https://accept.paymob.com/api/ecommerce/orders', {
+      auth_token: token,
+      delivery_needed: false,
+      amount_cents: amount * 100,
+      currency: 'EGP',
+      items: []
+    });
+    const orderId = orderRes.data.id;
+
+    // Step 3: Payment Key
+    const keyRes = await axios.post('https://accept.paymob.com/api/acceptance/payment_keys', {
+      auth_token: token,
+      amount_cents: amount * 100,
+      expiration: 3600,
+      order_id: orderId,
+      billing_data: {
+        first_name: 'Customer',
+        last_name: '.',
+        email: user.email,
+        phone_number: '01000000000',
+        apartment: 'NA', floor: 'NA', street: 'NA',
+        building: 'NA', shipping_method: 'NA',
+        postal_code: 'NA', city: 'NA',
+        country: 'EG', state: 'NA'
+      },
+      currency: 'EGP',
+      integration_id: process.env.PAYMOB_INTEGRATION_ID
+    });
+    const paymentKey = keyRes.data.token;
+
+    const iframeUrl = `https://accept.paymob.com/api/acceptance/iframes/${process.env.PAYMOB_IFRAME_ID}?payment_token=${paymentKey}`;
+
+    res.json({ iframeUrl });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.listen(process.env.PORT || 3000, () => console.log('🚀 Server running'));
