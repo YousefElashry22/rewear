@@ -66,7 +66,7 @@ const requireAuth = async (req, res, next) => {
     return res.status(401).json({ error: 'الـ token غلط أو انتهى' });
   }
 
-  req.user = user; 
+  req.user = user;
   next();
 };
 
