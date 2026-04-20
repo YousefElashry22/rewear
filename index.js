@@ -5,6 +5,15 @@ const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 
+const compression = require('compression');
+app.use(compression());
+
+// Cache للمنتجات
+let productsCache = null;
+let cacheTime = null;
+const CACHE_DURATION = 2 * 60 * 1000; // دقيقتين
+
+
 app.use(cors({
   origin: 'https://rewear-front.vercel.app',
   credentials: true,
@@ -82,23 +91,31 @@ const requireAdmin = async (req, res, next) => {
 // PRODUCTS ROUTES
 // ───────────────────────────────
 app.get('/products', async (req, res) => {
+  res.set('Cache-Control', 'public, max-age=120');
+  
+  const { category } = req.query;
+  
+  // لو مفيش category filter وفيه cache
+  if (!category && productsCache && (Date.now() - cacheTime < CACHE_DURATION)) {
+    return res.json(productsCache);
+  }
+
   try {
     let query = supabase.from('products').select('*');
-    if (req.query.category && req.query.category !== 'All') {
-      query = query.eq('category', req.query.category);
+    if (category && category !== 'All') {
+      query = query.eq('category', category.toLowerCase());
     }
     const { data, error } = await query;
-
-    if (error) {
-      console.log('Supabase error:', error);
-      return res.status(500).json({ error: error.message });
+    if (error) return res.status(500).json({ error: error.message });
+    
+    if (!category) {
+      productsCache = data;
+      cacheTime = Date.now();
     }
-
+    
     res.json(data);
   } catch (e) {
-    console.log('❌ السبب الحقيقي:', e.message);
-    console.log('❌ التفاصيل:', e.cause);
-    res.status(500).json({ error: e.message, cause: e.cause });
+    res.status(500).json({ error: e.message });
   }
 });
 
