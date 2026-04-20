@@ -6,7 +6,7 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 
 app.use(cors({
-  origin: 'https://courageous-pudding-3d68b2.netlify.app',
+  origin: 'https://rewear-front.vercel.app',
   credentials: true,
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization']
