@@ -316,17 +316,19 @@ const axios = require('axios');
 
 // Paymob Payment Route
 app.post('/payment/create', requireAuth, async (req, res) => {
-  const { amount } = req.body;
+  const { amount, items, full_name, phone, address, city, notes, customer_email, payment_method } = req.body;
   const user = req.user;
 
+  const integrationId = payment_method === 'wallet'
+    ? process.env.PAYMOB_WALLET_INTEGRATION_ID
+    : process.env.PAYMOB_INTEGRATION_ID;
+
   try {
-    // Step 1: Auth Token
     const authRes = await axios.post('https://accept.paymob.com/api/auth/tokens', {
       api_key: process.env.PAYMOB_API_KEY
     });
     const token = authRes.data.token;
 
-    // Step 2: Order
     const orderRes = await axios.post('https://accept.paymob.com/api/ecommerce/orders', {
       auth_token: token,
       delivery_needed: false,
@@ -334,31 +336,27 @@ app.post('/payment/create', requireAuth, async (req, res) => {
       currency: 'EGP',
       items: []
     });
-    const orderId = orderRes.data.id;
 
-    // Step 3: Payment Key
     const keyRes = await axios.post('https://accept.paymob.com/api/acceptance/payment_keys', {
       auth_token: token,
       amount_cents: amount * 100,
       expiration: 3600,
-      order_id: orderId,
+      order_id: orderRes.data.id,
       billing_data: {
-        first_name: 'Customer',
-        last_name: '.',
-        email: user.email,
-        phone_number: '01000000000',
-        apartment: 'NA', floor: 'NA', street: 'NA',
+        first_name: full_name?.split(' ')[0] || 'Customer',
+        last_name: full_name?.split(' ')[1] || '.',
+        email: customer_email || user.email,
+        phone_number: phone || '01000000000',
+        apartment: 'NA', floor: 'NA', street: address || 'NA',
         building: 'NA', shipping_method: 'NA',
-        postal_code: 'NA', city: 'NA',
+        postal_code: 'NA', city: city || 'NA',
         country: 'EG', state: 'NA'
       },
       currency: 'EGP',
-      integration_id: process.env.PAYMOB_INTEGRATION_ID
+      integration_id: integrationId
     });
-    const paymentKey = keyRes.data.token;
 
-    const iframeUrl = `https://accept.paymob.com/api/acceptance/iframes/${process.env.PAYMOB_IFRAME_ID}?payment_token=${paymentKey}`;
-
+    const iframeUrl = `https://accept.paymob.com/api/acceptance/iframes/${process.env.PAYMOB_IFRAME_ID}?payment_token=${keyRes.data.token}`;
     res.json({ iframeUrl });
   } catch (e) {
     res.status(500).json({ error: e.message });
